@@ -1,74 +1,108 @@
 from iotticket.client import Client
-from http.server import HTTPServer, BaseHTTPRequestHandler
-from optparse import OptionParser
-
+from iotticket.models import datanodesvalue
+from iotticket.models import device
+from iotticket.models import criteria
+from iotticket.models import deviceattribute
+from iotticket.models import datanodesvalue
+from iotticket.client import Client
+from time import time
+import json
 class network_adapter:
 
     username = "LassiPee" #iot-ticket tili
     password = "Lorawandemo1234" #iot-ticket tilin
     baseurl = "https://my.iot-ticket.com/api/v1/"
-    c = Client(baseurl, username, password)
     deviceId = "testi"
 
     def __init__(self):
-        c = Client(self.baseurl, self.username, self.password)
+        self.c = Client(self.baseurl, self.username, self.password)
+        print ("network adapter initialized: " + str(self.c))
+        self.dev= self.create_device()
+
+
+    def findMyDevice(c):
+
+        devices = c.getdevices()
+
+        for dev in devices.deviceslist:
+            if dev.name == c.deviceId:
+                print("-------------------------------------------------------\n")
+                print("Device {} found on server.".format(dev.name))
+                print("-------------------------------------------------------\n")
+                return dev
+
+        return None
 
     def create_device(self):
-        #create device
-        if (self.c != "404 URL NOT FOUND!!!"):
 
-            d = self.device()
-            d.set_name("LoraWan network adapter")
-            d.set_manufacturer("Wapice")
+        d = device()
+        d.set_name("Lorawan end node")
+        d.set_manufacturer("Wapice")
+        d.set_type("employee")
+        d.set_description("Im trainee")
+        d.set_attributes(deviceattribute("packet", "counter"))
 
-            print(self.c.registerdevice(d))
+        c = Client(self.baseurl, self.username, self.password)
 
-        else:
-            print(self.c)
+        c.registerdevice(d)
 
 
     def write_to_iot(self,data):
 
-        nv1 = add_node("data", data["EUI"], "string", data["data"])  # helppo käyttää EUI:ta polkuna, tällä tavoin
-        # siis vain kirjoitetaan suoraan hex payload iot-ticketiin ja halutessa se pitää vielä parsia ennen kirjoitusta ja kirjoittaa parsittu data mahdollisesti useampaan datanodeen
-        print(self.c.writedata(self.deviceId, nv1))
+        # pack data to node object
+        timeStamp = time()
+        nv = datanodesvalue()
+        nv.set_name("Lorawan")
+        nv.set_path=("fingerno1")
+        nv.set_dataType("double")
+        packetcounter = float(data["seqno"])
+        print(packetcounter)
+        nv.set_value(packetcounter)
+        nv.set_timestamp(timeStamp)
 
-class RequestHandler(BaseHTTPRequestHandler):
+        rssi = data["gws"][0]
+        float_rssi = float(rssi["rssi"])
+        print("rssi: ", float_rssi)
+        nv2 = datanodesvalue()
+        nv2.set_name("Lorawan")
+        nv2.set_path("fingerno2")
+        nv2.set_dataType("double")
+        nv2.set_value(float_rssi)
+        nv2.set_timestamp(timeStamp)
+        # bugi kirjastossa tämä pitäisi tulla automaattisesti, ei tule!
+        #nv1.set_timestamp(timeStamp)
 
-    def __init__(self):
+        snr = data["gws"][0]
+        float_snr = float(rssi["snr"])
+        print("snr: ", float_snr)
+        nv3 = datanodesvalue()
+        nv3.set_name("Lorawan")
+        nv3.set_path("fingerno3")
+        nv3.set_dataType("double")
+        nv3.set_value(float_snr)
+        nv3.set_timestamp(timeStamp)
+        # bugi kirjastossa tämä pitäisi tulla automaattisesti, ei tule!
+        #nv1.set_timestamp(timeStamp)
 
-        self.iot_ticket = network_adapter()
-        self.server = HTTPServer(('', port), RequestHandler)
+        print("nv1: ",nv)
+        print("nv2: ", nv2)
+        print("nv3: ", nv3)
 
-    def do_GET(self):
-        request_path = self.path
+        c = Client(self.baseurl, self.username, self.password)
 
-        print("\n----- Request Start ----->\n")
-        print("Request path:", request_path)
-        print("Request headers:", self.headers)
-        print("<----- Request End -----\n")
+        c.writedata("572ceee45cfc4a6c95ef3e7c4948f0ae", nv, nv2 ,nv3)
 
-        self.send_response(200)
-        self.send_header("Set-Cookie", "foo=bar")
-        self.end_headers()
 
-    def do_POST(self):
-        request_path = self.path
+    def findMyDevice(self):
 
-        print("\n----- Request Start ----->\n")
-        print("Request path:", request_path)
+        devices = self.c.getdevices()
 
-        request_headers = self.headers
-        content_length = request_headers.get('Content-Length')
-        length = int(content_length) if content_length else 0
+        for dev in devices.deviceslist:
+            if dev.name == self.c.deviceId:
+                print("-------------------------------------------------------\n")
+                print("Device {} found on server.".format(dev.name))
+                print("-------------------------------------------------------\n")
+                return dev
 
-        print("Content Length:", length)
-        print("Request headers:", request_headers)
-        print("Request payload:", self.rfile.read(length))
-        print("<----- Request End -----\n")
-        self.iot_ticket.write_to_iot(self.self.rfile.read(length))
-        self.send_response(200)
-        self.end_headers()
+        return None
 
-    do_PUT = do_POST
-    do_DELETE = do_GET
