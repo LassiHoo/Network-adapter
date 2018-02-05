@@ -41,7 +41,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         print("<----- Request End -----\n")
         self.send_response(200)
         self.end_headers()
-        iot_ticket.write_to_iot(reply)
+        iot_ticket.end_node_parser(reply)
 
     do_PUT = do_POST
     do_DELETE = do_GET
