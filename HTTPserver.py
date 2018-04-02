@@ -9,7 +9,6 @@ import codecs
 
 class RequestHandler(BaseHTTPRequestHandler):
 
-
     def do_GET(self):
         request_path = self.path
 
