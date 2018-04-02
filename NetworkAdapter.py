@@ -122,7 +122,7 @@ class network_adapter:
         nv3.set_value(float_per)
         nv3.set_timestamp(timeStamp)
 
-        interval = result['measinterval']
+        interval = result['interval']
         float_interval = float(interval)
         nv4 = datanodesvalue()
         nv4.set_name("Measurement interval")
@@ -131,9 +131,18 @@ class network_adapter:
         nv4.set_value(float_interval)
         nv4.set_timestamp(timeStamp)
 
+        measinterval = result['measinterval']
+        float_measinterval = float(measinterval)
+        nv5 = datanodesvalue()
+        nv5.set_name("Measured interval")
+        nv5.set_path(iot_id)
+        nv5.set_dataType("double")
+        nv5.set_value(float_measinterval)
+        nv5.set_timestamp(timeStamp)
+
         c = Client(self.baseurl, self.username, self.password)
 
-        print(c.writedata(self.dev_iot_id, nv, nv1,nv2, nv3, nv4 ))
+        print(c.writedata(self.dev_iot_id, nv, nv1,nv2, nv3, nv4, nv5 ))
 
 
     # def findMyDevice(self):
