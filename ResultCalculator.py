@@ -1,4 +1,4 @@
-import numpy as np
+#import numpy as np
 import datetime
 
 class result_calculator:
@@ -8,35 +8,32 @@ class result_calculator:
         self.per_counter = 0
         self.error_counter = 0
         self.meas_counter = 0
+        self.packet_counter = 0
         self.gateway_cdf_buffer=[]
         self.network_cdf_buffer = []
         self.MEASUREMENT_INTERVAL = 20
         self.CDF_MEASUREMENT_INTERVAL = 100
-        self.network_delay
+        self.network_delay=0
+        self.gateway_delay=0
         self.gateway_cdf_result_buffer = {}
         self.network_cdf_result_buffer = {}
-        self.data = {}
-        self.data['result'] = []
-        self.data['result'].append({
-            'start_time': 'none',
+        self.data={
             'per': self.per_counter,
-            'cdf': self.cdf_buffer,
             'gatewaydelay': self.gateway_delay,
             'networkdelay': self.network_delay,
-            'gatewaydelay_cdf': self.gateway_cdf_buffer,
-            'network_cdf': self.network_cdf_buffer,
-        })
+            'measinterval': 0
+        }
 
-    def cdf_calculation(self, samplebuffer):
-        if len(samplebuffer)==self.CDF_MEASUREMENT_INTERVAL:
-            del samplebuffer[:]
-        cdfx = np.sort(samplebuffer)
-        cdfy = np.linspace(1 / len(samplebuffer), 1.0, len(samplebuffer))
-        return cdfx, cdfy
+    # def cdf_calculation(self, samplebuffer):
+    #     if len(samplebuffer)==self.CDF_MEASUREMENT_INTERVAL:
+    #         del samplebuffer[:]
+    #     cdfx = np.sort(samplebuffer)
+    #     cdfy = np.linspace(1 / len(samplebuffer), 1.0, len(samplebuffer))
+    #     return cdfx, cdfy
 
 
     def per_calculator(self, end_nodecounter):
-        if ( self.packet_counter != 0):
+        if ( end_nodecounter != 0):
             if end_nodecounter != (self.packet_counter + 1):
                 self.error_counter= self.error_counter + 1.0
             self.meas_counter = self.meas_counter + 1
@@ -44,6 +41,8 @@ class result_calculator:
                 self.per_counter = ( self.error_counter / self.meas_counter )
                 self.error_counter = 0
                 self.meas_counter = 0
+        self.packet_counter = end_nodecounter
+        return self.per_counter
 
     def calc_ms(self,string):
         #print("calc_millisecond string",string)
@@ -59,21 +58,28 @@ class result_calculator:
         total_milliseconds = int(r)/1000 + minute_to_millisecond + second_to_millisecond
         #print("total millisecond", total_milliseconds)
         self.delay = total_milliseconds
+        return total_milliseconds
 
     def calc_result(self,input):
+        print("calc result input: ", input)
         Ts = datetime.datetime.now()
-        end_node_delay = self.calc_ms(input.end_node_delay)
+        print("end node delay: ",input[0])
+        end_node_delay = input[0]
         network_server_delay = (Ts.microsecond / 1000) + (Ts.minute * 60 * 1000) + (Ts.second * 1000)
-        gateway_server_delay = self.calc_ms(input.gateway_delay)
+        print("gateway delay before calc: ", input[1])
+        gateway_server_delay = self.calc_ms(input[1])
+        print("gateway after calc: ", gateway_server_delay)
         # print("Network server delay milliseconds: ", network_serve_delay)
         # print("gateway server delay milliseconds: ", gateway_server_delay)
         # print("end node delay in milliseconds", end_node_delay)
-        self.data['result']['gatewaydelay'] = gateway_server_delay - end_node_delay
-        self.data['result']['networkdelay'] = network_server_delay - end_node_delay
-        self.per_counter(input.packet_counter)
-        self.gateway_cdf_buffer.append(self.data['result']['gatewaydelay'])
-        self.gateway_cdf_result_buffer=self.cdf_calculation(self.gateway_cdf_buffer)
-        self.network_cdf_buffer.append(self.data['result']['networkdelay'])
-        self.network_cdf_result_buffer=self.cdf_calculation( self.network_cdf_buffer )
+        self.data['gatewaydelay'] = gateway_server_delay - end_node_delay
+        self.data['networkdelay'] = network_server_delay - end_node_delay
+        self.data['per'] = self.per_calculator(input[2])
+        self.data['measinterval'] = input[3]
+
+        #self.gateway_cdf_buffer.append(self.data['result']['gatewaydelay'])
+        #self.gateway_cdf_result_buffer=self.cdf_calculation(self.gateway_cdf_buffer)
+        #self.network_cdf_buffer.append(self.data['result']['networkdelay'])
+        #self.network_cdf_result_buffer=self.cdf_calculation( self.network_cdf_buffer )
 
         return self.data

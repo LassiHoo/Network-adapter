@@ -18,7 +18,7 @@ class network_adapter:
     deviceId = "testi"
     MEASUREMENT_INTERVAL = 5
     dev1 ="0004A30B001F3A96"
-    dev_iot_id = "5c37711ab82d4244bcaa50c071ac94c5"
+    dev_iot_id = "610ffa1e14b94b8b8bc8079344ab9fae"
     dev2 ="BE7A000000001FF8"
     dev3 ="0004A30B001F3A95"
 
@@ -57,23 +57,21 @@ class network_adapter:
         print("end node address", data["EUI"])
         fingernumber = "EUI" + end_node_address
         print("fingernumber", data["EUI"])
-        result = self.multiplex(end_node_address,data)
+        result = self.parse(end_node_address, data)
         self.write_to_iot_ticket(data, fingernumber,result)
 
-    def multiplex(self,end_node,data):
+    def parse(self, end_node, data):
 
         timetost = data["gws"][0]
+        print("time",timetost)
         end_node_delay_stringhex = data["data"]
-        # print("end node delay in hex",end_node_delay_stringhex)
+        print("data in hex",end_node_delay_stringhex)
         str_time = timetost["time"]
         e = codecs.decode(end_node_delay_stringhex, "hex")
         ascii = codecs.decode(e, "ascii")
-
+        print("data in ascii", ascii)
         delay, counter, transmission = ascii.split(':')
-        input.end_node_delay = int(delay)
-        input.gateway_delay = str_time
-        input.end_nodecounter = int(counter)
-        input.transmission_interval = float(transmission)
+        input = int(delay), str_time, int(counter), float(transmission)
 
         if end_node == self.dev1:
             output = self.dev1_result_calculator.calc_result(input)
@@ -90,7 +88,6 @@ class network_adapter:
 
         rssi = data["gws"][0]
         float_rssi = float(rssi["rssi"])
-        # print("rssi: ", float_rssi)
         nv = datanodesvalue()
         nv.set_name("RSSI")
         nv.set_path(iot_id)
@@ -98,21 +95,45 @@ class network_adapter:
         nv.set_value(float_rssi)
         nv.set_timestamp(timeStamp)
 
-        timeStamp = time()
-
-        gateway_delay = result['result']['gatewaydelay']
-        float_rssi = float(gateway_delay)
-        # print("rssi: ", float_rssi)
+        gateway_delay = result['gatewaydelay']
+        float_gvd = float(gateway_delay)
         nv1 = datanodesvalue()
         nv1.set_name("Gateway delay")
         nv1.set_path(iot_id)
         nv1.set_dataType("double")
-        nv1.set_value(float_rssi)
+        nv1.set_value(float_gvd)
         nv1.set_timestamp(timeStamp)
+
+        network_delay = result['networkdelay']
+        float_nvd = float(network_delay)
+        nv2 = datanodesvalue()
+        nv2.set_name("Network delay")
+        nv2.set_path(iot_id)
+        nv2.set_dataType("double")
+        nv2.set_value(float_nvd)
+        nv2.set_timestamp(timeStamp)
+
+        per = result['per']
+        float_per = float(per)
+        nv3 = datanodesvalue()
+        nv3.set_name("PER")
+        nv3.set_path(iot_id)
+        nv3.set_dataType("double")
+        nv3.set_value(float_per)
+        nv3.set_timestamp(timeStamp)
+
+        interval = result['measinterval']
+        float_interval = float(interval)
+        nv4 = datanodesvalue()
+        nv4.set_name("Measurement interval")
+        nv4.set_path(iot_id)
+        nv4.set_dataType("double")
+        nv4.set_value(float_interval)
+        nv4.set_timestamp(timeStamp)
 
         c = Client(self.baseurl, self.username, self.password)
 
-        print(c.writedata(self.dev_iot_id, nv, nv1 ))
+        print(c.writedata(self.dev_iot_id, nv, nv1,nv2, nv3, nv4 ))
 
 
     # def findMyDevice(self):
