@@ -140,9 +140,18 @@ class network_adapter:
         nv5.set_value(float_measinterval)
         nv5.set_timestamp(timeStamp)
 
+        interval_ms = result['interval_ms']
+        float_interval_ms = float(interval_ms)
+        nv6 = datanodesvalue()
+        nv6.set_name("Measurement interval (ms)")
+        nv6.set_path(iot_id)
+        nv6.set_dataType("double")
+        nv6.set_value(float_interval_ms)
+        nv6.set_timestamp(timeStamp)
+
         c = Client(self.baseurl, self.username, self.password)
 
-        print(c.writedata(self.dev_iot_id, nv, nv1,nv2, nv3, nv4, nv5 ))
+        print(c.writedata(self.dev_iot_id, nv, nv1,nv2, nv3, nv4, nv5, nv6 ))
 
 
     # def findMyDevice(self):

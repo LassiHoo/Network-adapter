@@ -23,7 +23,8 @@ class result_calculator:
             'gatewaydelay': self.gateway_delay,
             'networkdelay': self.network_delay,
             'measinterval': 0,
-            'interval':0
+            'interval':0,
+            'interval_ms': 0
         }
 
     # def cdf_calculation(self, samplebuffer):
@@ -69,7 +70,10 @@ class result_calculator:
         end_node_delay = input[0]
         network_server_delay = (Ts.microsecond / 1000) + (Ts.minute * 60 * 1000) + (Ts.second * 1000)
         if self.previous_time_stamp != 0:
+            print("Network delay: ", network_server_delay)
+            print("previous delay: ",self.previous_time_stamp)
             measured_time_interval = network_server_delay - self.previous_time_stamp
+            print("measured time interval: ",measured_time_interval)
         self.previous_time_stamp = network_server_delay
         print("gateway delay before calc: ", input[1])
         gateway_server_delay = self.calc_ms(input[1])
@@ -82,6 +86,7 @@ class result_calculator:
         self.data['per'] = self.per_calculator(input[2])
         self.data['interval'] = input[3]
         self.data['measinterval'] = measured_time_interval
+        self.data['interval_ms'] = input[3] * 1000
         #self.gateway_cdf_buffer.append(self.data['result']['gatewaydelay'])
         #self.gateway_cdf_result_buffer=self.cdf_calculation(self.gateway_cdf_buffer)
         #self.network_cdf_buffer.append(self.data['result']['networkdelay'])
